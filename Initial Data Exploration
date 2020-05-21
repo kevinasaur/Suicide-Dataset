@@ -1,49 +1,54 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[7]:
-
+#%%
 
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-get_ipython().magic(u'matplotlib inline')
+%matplotlib inline
 import plotly.express as px
 
 data = pd.read_csv('master.csv')
 
-##Analysis of Data showed that there were alot fo Nulls in HDI - this needed to be replaced
-data['HDI for year'] = data['HDI for year'].fillna(0)
-
+##Analysis of Data showed that there were alot of Nulls in HDI. Replacing with Mean for analysis. Also dropping country year - not neccessary. 
+data.drop("country-year", axis=1, inplace=True)
+data.fillna(data.mean(), inplace=True)
 data.head()
 
+#%%
 
-# In[9]:
+## Dropping countries with no data and removing 2016 (no data)
+data[data.country != 'Dominica']
+data[data.country != 'Saint Kitts and Nevis']
+data[data.year != 2016]
+
+#%%
+
+## Number strings with commas into integers
+data[" gdp_for_year ($) "] = data[" gdp_for_year ($) "].str.replace(",", "").astype("int")
+data.info()
+
+#%%
 
 
-##Analysing data - no visible 
-data.describe()
+## Converting objects into numerical labels
+data[["country","age","sex","generation"]] = data[["country","age","sex","generation"]].astype("category")
+columns = data.select_dtypes(['category']).columns
+data[columns] = data[columns].apply(lambda fx: fx.cat.codes)
+data.dtypes
 
-
-# In[11]:
-
+#%%
 
 ##Review distribution of gender
 sns.countplot(x='sex', data=data);
 plt.title('Distribution of Gender');
 
-
-# In[44]:
-
+#%%
 
 ##Distribution of Age
 data['age'].value_counts().plot(kind='bar')
 plt.title('Distribution of Age');
 
-
-# In[22]:
-
+#%%
 
 perc = data.loc[:,["year","country",'suicides_no']]
 perc['total_suicides'] = perc.groupby([perc.country,perc.year])['suicides_no'].transform('sum')
@@ -59,9 +64,7 @@ fig=px.bar(perc,x='country', y="total_suicides", animation_frame="year",
            animation_group="country", color="country", hover_name="country")
 fig.show()
 
-
-# In[25]:
-
+#%%
 
 ##Prevelance of Suicides among different age groups
 age = data.loc[:,['year','age','suicides_no']]
@@ -74,32 +77,19 @@ fig=px.bar(age,x='age', y="total_suicides", animation_frame="year",
            animation_group="age", color="age", hover_name="age")
 fig.show()
 
-
-# In[26]:
-
+#%%
 
 ##Correlation Heat Map
 sns.heatmap(data.corr(), annot=True)
 
-
-# In[27]:
-
+#%%
 
 ## Relation between number of suicides and gdp_per_capita
 fig = plt.figure(figsize=(20,7))
 sns.scatterplot(data=data, x='gdp_per_capita ($)', y='suicides_no')
 
-
-# In[32]:
-
+#%%
 
 fig = plt.figure(figsize=(25,10))
 sns.scatterplot('suicides/100k pop', 'population', hue='population', data=data);
 plt.title('Suicides vs Suicides/100k pop, Colored by population');
-
-
-# In[ ]:
-
-
-
-
